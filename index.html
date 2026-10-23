@@ -1,0 +1,1211 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Impianto prese – computo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ECEEEA; --surface:#F8F9F6; --ink:#1E272B; --muted:#5D686B; --line:#CDD3CF;
+  --fase:#8A4B2A; --neutro:#2D5C99; --terra:#3E8A3A; --giallo:#C2C832; --warn:#B3261E; --att:#9A6200;
+  --plate:#FFFFFF; --slot:#D5DBD7;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#151B1D; --surface:#1D2528; --ink:#E4EAE7; --muted:#9AA6A7; --line:#334044;
+    --fase:#C9845A; --neutro:#7FA7DD; --terra:#79C072; --giallo:#C9D23A; --warn:#F2827A; --att:#E3B341;
+    --plate:#2A3438; --slot:#3C4A4F; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151B1D; --surface:#1D2528; --ink:#E4EAE7; --muted:#9AA6A7; --line:#334044;
+  --fase:#C9845A; --neutro:#7FA7DD; --terra:#79C072; --giallo:#C9D23A; --warn:#F2827A; --att:#E3B341;
+  --plate:#2A3438; --slot:#3C4A4F; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.num{font-family:"Barlow Semi Condensed","Barlow",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+button{font:inherit;cursor:pointer;color:inherit}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-width:0;width:100%}
+textarea{resize:vertical;min-height:62px}
+select{padding-right:6px}
+:focus-visible{outline:2px solid var(--neutro);outline-offset:2px}
+
+/* Testata */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:880px;margin:0 auto;padding:14px 16px 0;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-size:1.3rem;margin:0;font-weight:700;letter-spacing:-.01em;line-height:1.15}
+.status{font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:3px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--terra);flex:none}
+.dot.saving{background:var(--giallo)} .dot.none{background:var(--warn)}
+.grand{text-align:right}
+.grand b{display:block;font-size:1.55rem;line-height:1.05;font-weight:700}
+.grand span{font-size:.76rem;color:var(--muted)}
+nav.tabs{max-width:880px;margin:0 auto;display:flex;gap:2px;padding:8px 6px 0;overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{border:0;background:none;font-weight:600;color:var(--muted);padding:8px 10px 11px;position:relative;white-space:nowrap;flex:none}
+.tab[aria-selected="true"]{color:var(--ink)}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:4px;border-radius:2px 2px 0 0;
+  background:linear-gradient(90deg,var(--fase) 0 33.3%,var(--neutro) 33.3% 66.6%,var(--terra) 66.6%)}
+main{max-width:880px;margin:0 auto;padding:16px 16px 56px}
+
+/* Pulsanti */
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--surface);border-radius:8px;padding:9px 14px;font-weight:600}
+.btn.sec{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.danger{background:transparent;color:var(--warn);border-color:transparent;padding-left:0;padding-right:0}
+.x{border:0;background:none;color:var(--muted);width:34px;height:34px;font-size:1.25rem;line-height:1;border-radius:6px;flex:none}
+.x:hover{color:var(--warn)}
+.x.nb{font-size:1rem}
+.x.nb.has{color:var(--att)}
+.x.nb:hover{color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.row select{width:auto;flex:1;min-width:180px}
+.note{font-size:.88rem;color:var(--muted);margin:0}
+.warn{color:var(--warn);font-weight:500;margin:0;font-size:.88rem}
+.att{color:var(--att);font-weight:600}
+.empty{color:var(--muted);font-size:.92rem;margin:10px 0}
+h2{font-size:1.05rem;margin:28px 0 8px}
+
+/* Legenda */
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 14px;font-size:.84rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:16px;border-radius:2px;display:inline-block;flex:none}
+.sw.round{width:12px;height:12px;border-radius:50%}
+.sw.sq{width:12px;height:12px;border-radius:2px}
+
+/* Card (ambienti e composizioni) */
+.room{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.room-h{display:flex;align-items:center;gap:10px;padding:14px 14px;width:100%;border:0;background:none;text-align:left}
+.room-h .nm{font-weight:600;font-size:1.05rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.room-h .meta{color:var(--muted);font-size:.9rem;white-space:nowrap}
+.room-h .cost{font-weight:600;white-space:nowrap;min-width:78px;text-align:right}
+.chev{transition:transform .15s;flex:none;color:var(--muted)}
+.room.open .chev{transform:rotate(90deg)}
+.tag{font-size:.72rem;font-weight:600;border:1px solid var(--neutro);color:var(--neutro);border-radius:4px;padding:0 5px}
+.room-body{padding:4px 14px 16px;border-top:1px solid var(--line)}
+.room-tools{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;padding:10px 0 6px}
+.room-tools .field{flex:1;min-width:200px}
+.chk{display:inline-flex;align-items:center;gap:8px;font-size:.95rem;padding:8px 0}
+.chk input{width:18px;height:18px;margin:0;accent-color:var(--ink);flex:none}
+.addpt{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 8px}
+.addpt select{flex:1;min-width:200px;width:auto}
+.addroom{display:flex;gap:8px;margin-top:16px}
+.addroom input{flex:1}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 14px}
+.list .pt:last-child{border-bottom:0}
+
+/* Punti */
+.pt{border-bottom:1px solid var(--line)}
+.pt-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 0;width:100%;border:0;background:none;text-align:left}
+.pt-info{flex:1;min-width:130px}
+.pt-info b{display:block;font-weight:600}
+.pt-info small{display:block;color:var(--muted);font-size:.84rem}
+.pt-info small.warn{color:var(--warn)}
+.pt-info small.att{color:var(--att)}
+.pt-cost{font-weight:600;white-space:nowrap}
+.pt.open .pt-row{padding-bottom:6px}
+
+/* Placca */
+.plate{display:grid;grid-template-columns:repeat(var(--cols),24px);gap:2px;padding:6px 8px;background:var(--plate);
+  border:1px solid var(--line);border-radius:8px;flex:none}
+.plate.over{border-color:var(--warn);outline:2px solid var(--warn);outline-offset:1px}
+.blk{height:34px;border-radius:3px;display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap;
+  font:600 9px/1 "Barlow Semi Condensed","Barlow",sans-serif;letter-spacing:.02em}
+.k-presa{background:var(--fase);color:#fff}
+.k-comando{background:var(--ink);color:var(--surface)}
+.k-segnale{background:var(--neutro);color:#fff}
+.k-altro{background:var(--muted);color:var(--surface)}
+.k-vuoto{background:repeating-linear-gradient(135deg,var(--slot) 0 2px,transparent 2px 6px);box-shadow:inset 0 0 0 1px var(--slot)}
+
+/* Editor */
+.ed{display:grid;gap:14px;padding:4px 0 16px}
+.field{display:grid;gap:4px}
+.field>span{font-size:.84rem;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;width:max-content}
+.seg button{border:0;background:transparent;padding:8px 12px;font-weight:500;white-space:nowrap}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.seg output{padding:8px 4px;min-width:50px;text-align:center;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;width:max-content}
+.step button{border:0;background:none;width:36px;height:36px;font-size:1.15rem;line-height:1}
+.step output{min-width:26px;text-align:center;font-weight:600}
+.frl{display:grid;gap:6px;margin-bottom:8px}
+.fr{display:flex;align-items:center;gap:6px}
+.fr .n{flex:1;min-width:0}
+.fr .n small{display:block;color:var(--muted);font-size:.8rem}
+.fr .n small.att{color:var(--att)}
+.fnote{display:grid;gap:6px;padding:4px 0 8px 18px;border-left:2px solid var(--line);margin-left:5px}
+.notebox{display:grid;gap:6px}
+
+/* Listino */
+.lgrp h3{font-size:.95rem;margin:22px 0 6px;font-weight:600}
+.lrow{display:grid;grid-template-columns:62px 1fr 62px 92px;grid-template-areas:"nome nome nome del" "sigla cat mod prezzo";gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.l-nome{grid-area:nome}.l-sigla{grid-area:sigla}.l-cat{grid-area:cat}.l-mod{grid-area:mod}.l-prezzo{grid-area:prezzo}.l-del{grid-area:del;justify-self:end}
+.suf{display:flex;align-items:center;gap:4px}
+.suf span{font-size:.82rem;color:var(--muted)}
+.lhead{display:none}
+@media (min-width:680px){
+  .lrow{grid-template-columns:1fr 72px 150px 74px 104px 34px;grid-template-areas:"nome sigla cat mod prezzo del";border-bottom:0;padding:3px 0}
+  .lhead{display:grid;grid-template-columns:1fr 72px 150px 74px 104px 34px;gap:6px;font-size:.8rem;color:var(--muted);margin-top:14px}
+}
+
+/* Pianta */
+.pbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:10px}
+.pbar .grow{flex:1}
+.pempty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:28px 18px;display:grid;gap:14px;justify-items:start}
+.mapwrap{overflow:auto;max-height:64vh;background:var(--surface);border:1px solid var(--line);border-radius:12px;-webkit-overflow-scrolling:touch}
+.map{position:relative;min-width:100%}
+.map img{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;pointer-events:none}
+.map.arm{cursor:crosshair}
+.mk{position:absolute;width:20px;height:20px;transform:translate(-50%,-50%);border:2px solid #fff;padding:0;touch-action:none;
+  box-shadow:0 0 0 1px rgba(0,0,0,.45);border-radius:50%;cursor:grab}
+.mk.uomo{border-radius:3px}
+.mk.sel{width:26px;height:26px;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 0 0 4px var(--att);z-index:2}
+.mk.dim{opacity:.28}
+.mk i{position:absolute;top:-10px;right:-10px;width:15px;height:15px;border-radius:50%;background:var(--att);color:#fff;font:700 10px/15px "Barlow",sans-serif;font-style:normal;text-align:center}
+.tray{margin-top:12px;display:grid;gap:10px}
+.tray .row select{max-width:280px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 10px;text-align:left}
+.chip.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.chip small{display:block;color:var(--muted);font-size:.8rem}
+.hint{background:var(--surface);border-left:4px solid var(--ink);padding:8px 12px;border-radius:0 8px 8px 0;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.popc{display:grid;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:10px}
+.popc small{display:block;color:var(--muted)}
+
+/* Riepilogo */
+.totbox{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.totbox>div{background:var(--surface);padding:12px 14px;display:grid;gap:4px;align-content:start}
+.totbox>div>span{font-size:.86rem;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:34px}
+.totbox b{font-size:1.3rem}
+.totbox .tot b{font-size:1.6rem}
+.ivap{width:96px}
+.ivap input{padding:5px 8px}
+.counts{margin:12px 0 0}
+.warnbox{margin-top:14px;border-left:4px solid var(--warn);padding:8px 12px;background:var(--surface);border-radius:0 8px 8px 0}
+.warnbox.a{border-color:var(--att)}
+.warnbox ul{margin:6px 0 0;padding-left:18px;font-size:.9rem}
+.tblwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:.94rem}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+thead th{font-size:.8rem;color:var(--muted);font-weight:600}
+tbody tr:last-child td{border-bottom:0}
+tfoot th,tfoot td{border-top:2px solid var(--ink);border-bottom:0;font-weight:700}
+.r{text-align:right;white-space:nowrap}
+td small{color:var(--muted)}
+
+/* Dialoghi */
+.modal{position:fixed;inset:0;background:rgba(10,16,18,.45);display:grid;place-items:center;z-index:50;padding:20px}
+.modal>div{background:var(--surface);border-radius:12px;padding:18px;max-width:380px;width:100%;display:grid;gap:14px}
+.modal p{margin:0}
+.modal .row{justify-content:flex-end}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:8px;z-index:60;font-size:.92rem;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:reduce){.chev{transition:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div>
+      <h1>Impianto prese</h1>
+      <div class="status" role="status"><span class="dot saving" id="dot"></span><span id="status">Caricamento…</span></div>
+    </div>
+    <div class="grand"><b id="grand" class="num">0,00 €</b><span id="grandLbl">totale</span></div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-act="tab" data-tab="ambienti">Ambienti</button>
+    <button class="tab" role="tab" data-act="tab" data-tab="composizioni">Composizioni</button>
+    <button class="tab" role="tab" data-act="tab" data-tab="listino">Listino</button>
+    <button class="tab" role="tab" data-act="tab" data-tab="pianta">Pianta</button>
+    <button class="tab" role="tab" data-act="tab" data-tab="riepilogo">Riepilogo</button>
+  </nav>
+</header>
+<main id="main"></main>
+<input type="file" id="fileIn" accept=".json,application/json" hidden>
+<input type="file" id="imgIn" accept="image/*" hidden>
+
+<script>
+(function(){
+"use strict";
+const KEY = "impianto-prese-v1";
+const KEY_IMG = "impianto-prese-v1-pianta";
+const FORMATI = [3,4,7];
+const ZOOMS = [1,1.5,2,3,4];
+const CAT = ["Presa","Comando","Segnale","Altro","Copriforo","Scatola","Supporto","Placca","Placca esterno"];
+const CAT_LABEL = {"Presa":"Prese","Comando":"Comandi","Segnale":"TV, dati e USB","Altro":"Altro (accessori, anche senza moduli)","Copriforo":"Copriforo","Scatola":"Scatole da incasso","Supporto":"Supporti (portaplacca)","Placca":"Placche","Placca esterno":"Placche da esterno IP55"};
+const FRUTTO_CAT = ["Presa","Comando","Segnale","Altro"];
+const MODELLI_BASE = [
+  ["Presa bipasso + Schuko",3,"terra",[["10/16",1],["SCH",1]]],
+  ["Due bipasso + USB-C",3,"terra",[["10/16",2],["USB-C",1]]],
+  ["Tre bipasso",3,"terra",[["10/16",3]]],
+  ["Presa USB-C + Schuko",3,"terra",[["USB-C",1],["SCH",1]]],
+  ["Schuko singola",3,"terra",[["SCH",1]]],
+  ["Bipasso singola",3,"terra",[["10/16",1]]],
+  ["TV + dati",3,"terra",[["TV",1],["RJ45",1]]],
+  ["Interruttore",3,"uomo",[["INT",1]]],
+  ["Deviatore",3,"uomo",[["DEV",1]]],
+  ["Due deviatori",3,"uomo",[["DEV",2]]],
+  ["Invertitore",3,"uomo",[["INV",1]]],
+  ["Pulsante",3,"uomo",[["PUL",1]]],
+  ["Interruttore + bipasso",3,"uomo",[["INT",1],["10/16",1]]],
+  ["Deviatore + bipasso",3,"uomo",[["DEV",1],["10/16",1]]],
+  ["Due bipasso + Schuko",4,"terra",[["10/16",2],["SCH",1]]],
+  ["Due Schuko",4,"terra",[["SCH",2]]],
+  ["Schuko + bipasso + USB-C",4,"terra",[["SCH",1],["10/16",1],["USB-C",1]]],
+  ["Postazione TV",7,"terra",[["TV",1],["RJ45",1],["10/16",1],["SCH",2]]],
+  ["Piano cucina",7,"uomo",[["SCH",2],["10/16",3]]],
+  ["Postazione scrivania",7,"terra",[["SCH",1],["10/16",2],["USB",1],["RJ45",1]]],
+  ["Punto vuoto",3,"terra",[]]
+];
+
+const uid = () => Math.random().toString(36).slice(2,10);
+const $ = s => document.querySelector(s);
+const fmtEur = new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR"});
+const eur = n => fmtEur.format(n || 0);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num = v => { const n = parseFloat(String(v).replace(/\s/g,"").replace(",",".")); return isFinite(n) ? n : 0; };
+const numStr = n => String(n).replace(".",",");
+const use = name => (window.claude && typeof window.claude.use === "function") ? window.claude.use(name).catch(() => null) : Promise.resolve(null);
+
+function defaultModelli(componenti){
+  return MODELLI_BASE.map(([nome, formato, altezza, f]) => ({
+    id:uid(), nome, formato, altezza, flag:false, nota:"",
+    frutti: f.map(([sig, q]) => {
+      const c = componenti.find(x => x.sigla === sig && FRUTTO_CAT.includes(x.categoria));
+      return c ? {compId:c.id, qta:q, flag:false, nota:""} : null;
+    }).filter(Boolean)
+  }));
+}
+function defaultState(){
+  const c = (nome,sigla,categoria,moduli,prezzo) => ({id:uid(),nome,sigla,categoria,moduli,prezzo});
+  const componenti = [
+    c("Presa bipasso 10/16 A","10/16","Presa",1,3.5),
+    c("Presa Schuko universale","SCH","Presa",2,7.9),
+    c("Presa USB-C","USB-C","Segnale",1,27),
+    c("Presa USB A+C","USB","Segnale",2,32),
+    c("Presa TV","TV","Segnale",1,8.5),
+    c("Presa dati RJ45 Cat 6","RJ45","Segnale",1,12),
+    c("Interruttore 1P 16 A","INT","Comando",1,4.2),
+    c("Deviatore","DEV","Comando",1,4.8),
+    c("Invertitore","INV","Comando",1,9.5),
+    c("Pulsante","PUL","Comando",1,4.5),
+    c("Copriforo","","Copriforo",1,0.9),
+    c("Scatola 503","503","Scatola",3,0.6),
+    c("Scatola 504","504","Scatola",4,0.9),
+    c("Scatola 506","506","Scatola",7,1.4),
+    c("Supporto 3 moduli","S3","Supporto",3,1.2),
+    c("Supporto 4 moduli","S4","Supporto",4,1.6),
+    c("Supporto 7 moduli","S7","Supporto",7,2.6),
+    c("Placca 3 moduli","P3","Placca",3,3.5),
+    c("Placca 4 moduli","P4","Placca",4,4.8),
+    c("Placca 7 moduli","P7","Placca",7,7.5),
+    c("Placca IP55 3 moduli","IP3","Placca esterno",3,12),
+    c("Placca IP55 4 moduli","IP4","Placca esterno",4,14.5),
+    c("Placca IP55 7 moduli","IP7","Placca esterno",7,21)
+  ];
+  const nomi = ["Corridoio","Cucina","Salotto","Stanza da letto PADRONALE","Stanza da letto per plebei","Bagno","Lavanderia","Sgabuzzino","Terrazzo"];
+  return {
+    versione:2, savedAt:0, iva:22, ivaAttiva:true, componenti,
+    modelli: defaultModelli(componenti), pianta:null,
+    ambienti: nomi.map(n => ({id:uid(), nome:n, esterno:n === "Terrazzo", punti:[]}))
+  };
+}
+
+const normFrutti = arr => (Array.isArray(arr) ? arr : []).filter(f => f && f.compId).map(f => ({
+  compId:String(f.compId), qta:Math.max(1, Math.round(num(f.qta)) || 1), flag:!!f.flag, nota:String(f.nota || "")
+}));
+function normalize(s){
+  if(!s || !Array.isArray(s.componenti) || !Array.isArray(s.ambienti)) return null;
+  delete s.piantaDataUrl;
+  s.versione = 2;
+  s.iva = isFinite(+s.iva) ? +s.iva : 22;
+  s.ivaAttiva = s.ivaAttiva !== false;
+  s.savedAt = +s.savedAt || 0;
+  s.componenti = s.componenti.filter(Boolean).map(c => ({
+    id:String(c.id || uid()), nome:String(c.nome || "Componente"), sigla:String(c.sigla || ""),
+    categoria: CAT.includes(c.categoria) ? c.categoria : "Altro",
+    moduli: Math.max(0, Math.round(num(c.moduli))), prezzo: Math.max(0, num(c.prezzo))
+  }));
+  s.modelli = Array.isArray(s.modelli) ? s.modelli.filter(Boolean).map(m => ({
+    id:String(m.id || uid()), nome:String(m.nome || "Composizione"),
+    formato: FORMATI.includes(+m.formato) ? +m.formato : 3,
+    altezza: m.altezza === "uomo" ? "uomo" : "terra",
+    flag:!!m.flag, nota:String(m.nota || ""), frutti:normFrutti(m.frutti)
+  })) : defaultModelli(s.componenti);
+  s.pianta = s.pianta && typeof s.pianta === "object" ? {assetId:s.pianta.assetId ? String(s.pianta.assetId) : null, w:+s.pianta.w || 0, h:+s.pianta.h || 0} : null;
+  s.ambienti = s.ambienti.filter(Boolean).map(a => ({
+    id:String(a.id || uid()), nome:String(a.nome || "Ambiente"), esterno:!!a.esterno,
+    punti:(Array.isArray(a.punti) ? a.punti : []).filter(Boolean).map(p => {
+      const qta = Math.max(1, Math.round(num(p.qta)) || 1);
+      return {
+        id:String(p.id || uid()), nome:String(p.nome || "Punto"), qta,
+        altezza: p.altezza === "uomo" ? "uomo" : "terra",
+        formato: FORMATI.includes(+p.formato) ? +p.formato : 3,
+        flag:!!p.flag, nota:String(p.nota || ""),
+        pos:(Array.isArray(p.pos) ? p.pos : []).filter(q => q && isFinite(+q.x) && isFinite(+q.y)).slice(0, qta).map(q => ({x:+q.x, y:+q.y})),
+        frutti:normFrutti(p.frutti)
+      };
+    })
+  }));
+  return s;
+}
+
+/* ---------- Stato e salvataggio automatico ---------- */
+let localOk = true;
+function loadLocal(){
+  try { const raw = localStorage.getItem(KEY); return raw ? normalize(JSON.parse(raw)) : null; }
+  catch(e){ localOk = false; return null; }
+}
+let state = loadLocal() || defaultState();
+let piantaLocal = null;
+try { piantaLocal = localStorage.getItem(KEY_IMG); } catch(e){}
+const ui = {tab:"ambienti", openRooms:new Set(), openPoint:null, openModel:null, preset:null, noteOpen:new Set(),
+  zoom:1, arm:null, sel:null, pRoom:"", srcFailed:false};
+
+let dbRef = null, saveTimer = null, dirty = false;
+function setStatus(kind){
+  const t = new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
+  const map = {
+    saving:["saving","Salvataggio…"],
+    cloud:["", "Salvato alle " + t],
+    local:["", "Salvato sul dispositivo alle " + t],
+    none:["none","Salvataggio automatico non disponibile: scarica un backup"],
+    error:["none","Ultimo salvataggio non riuscito, riprovo alla prossima modifica"]
+  };
+  const m = map[kind];
+  $("#dot").className = "dot " + m[0];
+  $("#status").textContent = m[1];
+}
+function scheduleSave(){
+  state.savedAt = Date.now();
+  dirty = true;
+  setStatus("saving");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persist, 600);
+}
+async function persist(){
+  clearTimeout(saveTimer);
+  if(!dirty) return;
+  dirty = false;
+  const json = JSON.stringify(state);
+  let ok = false;
+  try { localStorage.setItem(KEY, json); ok = true; localOk = true; } catch(e){ localOk = false; }
+  if(dbRef){
+    try { await dbRef.set({json, savedAt:state.savedAt}); setStatus("cloud"); return; }
+    catch(e){ setStatus(ok ? "local" : "error"); return; }
+  }
+  setStatus(ok ? "local" : "none");
+}
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden") persist(); });
+window.addEventListener("pagehide", persist);
+
+async function initCloud(){
+  const [db, user] = await Promise.all([use("db"), use("user")]);
+  let id = null;
+  if(db && user){ try { id = await user.id(); } catch(e){ id = null; } }
+  if(!db || !id){
+    if(!dirty) setStatus(localOk ? "local" : "none");
+    return;
+  }
+  const ref = db.collection("data/users/" + id).doc("impianto");
+  try {
+    const snap = await ref.get();
+    const d = snap.exists ? (snap.data() || {}) : null;
+    if(d){
+      const remote = typeof d.json === "string" ? normalize(JSON.parse(d.json)) : null;
+      if(remote && remote.savedAt > (state.savedAt || 0)){
+        state = remote;
+        try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+        render();
+      }
+    }
+    dbRef = ref;
+    if(state.savedAt && (!d || (+d.savedAt || 0) < state.savedAt)){ dirty = true; await persist(); }
+    else if(!dirty) setStatus("cloud");
+  } catch(e){
+    if(!dirty) setStatus(localOk ? "local" : "none");
+  }
+}
+
+/* ---------- Calcoli ---------- */
+const comp = id => state.componenti.find(c => c.id === id);
+const autoComp = (cat, mod) => state.componenti.find(c => c.categoria === cat && +c.moduli === +mod);
+const catKey = cat => ({"Presa":"presa","Comando":"comando","Segnale":"segnale"}[cat] || "altro");
+const hasAtt = o => !!(o.flag || o.frutti.some(f => f.flag));
+const hasNote = o => !!(o.nota || o.frutti.some(f => f.nota));
+
+function calcPunto(p, a){
+  const lines = [], warn = [];
+  let used = 0;
+  for(const f of p.frutti){
+    const c = comp(f.compId);
+    if(!c) continue;
+    used += (+c.moduli || 0) * f.qta;
+    lines.push({c, q:f.qta});
+  }
+  const free = Math.max(0, p.formato - used);
+  if(used > p.formato) warn.push(used + " moduli di frutti in una placca da " + p.formato + ": aumenta il formato o togli un frutto");
+  if(free > 0){
+    const cp = state.componenti.find(c => c.categoria === "Copriforo");
+    if(cp) lines.push({c:cp, q:free, auto:true}); else warn.push("Manca il copriforo nel listino");
+  }
+  const autos = [];
+  for(const cat of ["Scatola","Supporto", a.esterno ? "Placca esterno" : "Placca"]){
+    const c = autoComp(cat, p.formato);
+    if(c){ lines.push({c, q:1, auto:true}); autos.push(c.nome); }
+    else warn.push("Manca nel listino: " + cat.toLowerCase() + " da " + p.formato + " moduli");
+  }
+  const unit = lines.reduce((s,l) => s + l.c.prezzo * l.q, 0);
+  return {lines, used, free, warn, autos, unit, tot:unit * (p.qta || 1)};
+}
+
+function totals(){
+  const bom = new Map(), perAmb = [], warns = [];
+  let imp = 0, punti = 0, terra = 0, uomo = 0, piazzati = 0;
+  for(const a of state.ambienti){
+    let at = 0, ap = 0;
+    for(const p of a.punti){
+      const r = calcPunto(p, a);
+      at += r.tot; ap += p.qta; piazzati += p.pos.length;
+      if(p.altezza === "terra") terra += p.qta; else uomo += p.qta;
+      r.warn.forEach(w => warns.push(a.nome + ", " + p.nome + ": " + w));
+      for(const l of r.lines){
+        const e = bom.get(l.c.id) || {c:l.c, q:0};
+        e.q += l.q * p.qta;
+        bom.set(l.c.id, e);
+      }
+    }
+    imp += at; punti += ap;
+    perAmb.push({a, tot:at, punti:ap});
+  }
+  const iva = state.ivaAttiva ? imp * state.iva / 100 : 0;
+  const bomArr = [...bom.values()].sort((x,y) => CAT.indexOf(x.c.categoria) - CAT.indexOf(y.c.categoria) || x.c.nome.localeCompare(y.c.nome,"it"));
+  return {bom:bomArr, imp, iva, tot:imp + iva, punti, terra, uomo, piazzati, warns, perAmb};
+}
+
+function noteList(){
+  const out = [];
+  for(const a of state.ambienti) for(const p of a.punti){
+    if(p.flag || p.nota) out.push({a, p, el:"Punto", flag:p.flag, testo:p.nota});
+    for(const f of p.frutti){
+      if(!(f.flag || f.nota)) continue;
+      const c = comp(f.compId);
+      out.push({a, p, el:c ? c.nome : "Frutto", flag:f.flag, testo:f.nota});
+    }
+  }
+  return out.sort((x,y) => (y.flag - x.flag));
+}
+
+/* ---------- Pezzi di interfaccia ---------- */
+function plateHTML(p){
+  const cols = p.formato;
+  let html = "", pos = 0, over = false;
+  for(const f of p.frutti){
+    const c = comp(f.compId);
+    if(!c || !(+c.moduli > 0)) continue;
+    for(let i = 0; i < f.qta; i++){
+      const m = +c.moduli;
+      if(pos + m > cols){ over = true; continue; }
+      html += '<span class="blk k-' + catKey(c.categoria) + '" style="grid-column:span ' + m + '">' + esc(c.sigla) + '</span>';
+      pos += m;
+    }
+  }
+  for(; pos < cols; pos++) html += '<span class="blk k-vuoto"></span>';
+  return '<span class="plate' + (over ? ' over' : '') + '" style="--cols:' + cols + '" aria-hidden="true">' + html + '</span>';
+}
+const stepper = (act, val, i) => {
+  const di = i == null ? "" : ' data-i="' + i + '"';
+  return '<span class="step"><button data-act="' + act + '" data-d="-1"' + di + ' aria-label="Diminuisci">−</button><output class="num">' + val + '</output><button data-act="' + act + '" data-d="1"' + di + ' aria-label="Aumenta">+</button></span>';
+};
+const segB = (act, v, label, cur) => '<button data-act="' + act + '" data-v="' + v + '" aria-pressed="' + (String(v) === String(cur)) + '">' + label + '</button>';
+const chev = '<svg class="chev" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M5 2l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const flagLine = o => hasAtt(o) ? '<small class="att">⚑ Da attenzionare</small>' : (hasNote(o) ? '<small>Con note</small>' : '');
+
+/* Editor comune a punti e composizioni */
+function edHTML(o, r, isModel){
+  const frutti = state.componenti.filter(c => FRUTTO_CAT.includes(c.categoria));
+  const lista = o.frutti.map((f,i) => {
+    const c = comp(f.compId);
+    if(!c) return "";
+    const key = o.id + ":" + i, open = ui.noteOpen.has(key), has = f.flag || f.nota;
+    const prev = has ? '<small class="' + (f.flag ? "att" : "") + '">' + (f.flag ? "⚑ " : "") + esc(f.nota || "Da attenzionare") + '</small>' : '';
+    return '<div><div class="fr"><i class="sw k-' + catKey(c.categoria) + '"></i><span class="n">' + esc(c.nome) + '<small>' + c.moduli + ' mod, ' + eur(c.prezzo) + ' cad.</small>' + prev + '</span>'
+      + stepper("frQty", f.qta, i)
+      + '<button class="x nb' + (has ? " has" : "") + '" data-act="fNote" data-i="' + i + '" aria-expanded="' + open + '" aria-label="Nota su ' + esc(c.nome) + '">✎</button>'
+      + '<button class="x" data-act="frDel" data-i="' + i + '" aria-label="Rimuovi ' + esc(c.nome) + '">×</button></div>'
+      + (open ? '<div class="fnote"><label class="chk"><input type="checkbox" data-f="fFlag" data-i="' + i + '"' + (f.flag ? " checked" : "") + '> Da attenzionare</label>'
+        + '<input data-f="fNota" data-i="' + i + '" value="' + esc(f.nota) + '" placeholder="Nota su questo frutto" aria-label="Nota su ' + esc(c.nome) + '"></div>' : '')
+      + '</div>';
+  }).join("");
+  const copri = r.free ? (r.free === 1 ? ", 1 copriforo aggiunto" : ", " + r.free + " copriforo aggiunti") : "";
+  const azioni = isModel
+    ? '<button class="btn sec" data-act="mDup">Duplica composizione</button><button class="btn danger" data-act="mDel">Elimina composizione</button>'
+    : '<button class="btn sec" data-act="ptDup">Duplica punto</button><button class="btn sec" data-act="ptSave">Salva come composizione</button><button class="btn danger" data-act="ptDel">Elimina punto</button>';
+  return '<div class="ed">'
+    + '<label class="field"><span>' + (isModel ? "Nome della composizione" : "Nome del punto") + '</span><input data-f="oNome" value="' + esc(o.nome) + '"></label>'
+    + '<div class="row">'
+    + (isModel ? '' : '<div class="field"><span>Quantità</span>' + stepper("ptQty", o.qta) + '</div>')
+    + '<div class="field"><span>' + (isModel ? "Posizione predefinita" : "Posizione") + '</span><div class="seg">' + segB("oAlt","terra","A terra",o.altezza) + segB("oAlt","uomo","Altezza uomo",o.altezza) + '</div></div>'
+    + '<div class="field"><span>Formato</span><div class="seg">' + FORMATI.map(f => segB("oFmt", f, f + " mod", o.formato)).join("") + '</div></div>'
+    + '</div>'
+    + '<div class="field"><span>Frutti</span><div class="frl">' + (lista || '<p class="empty">Nessun frutto.</p>') + '</div>'
+    + '<div class="row"><select data-sel="frutto" aria-label="Frutto da aggiungere">' + frutti.map(c => '<option value="' + c.id + '">' + esc(c.nome) + ' (' + c.moduli + ' mod)</option>').join("") + '</select>'
+    + '<button class="btn sec" data-act="frAdd">Aggiungi frutto</button></div></div>'
+    + '<div class="field"><span>' + (isModel ? "Note della composizione" : "Note del punto") + '</span><div class="notebox">'
+    + '<label class="chk"><input type="checkbox" data-f="oFlag"' + (o.flag ? " checked" : "") + '> Da attenzionare</label>'
+    + '<textarea data-f="oNota" rows="2" placeholder="Accorgimenti, ad esempio «sotto il piano cucina a 110 cm» o «linea dedicata»">' + esc(o.nota) + '</textarea></div></div>'
+    + '<p class="note">' + r.used + ' moduli su ' + o.formato + ' occupati' + copri + '. Aggiunti in automatico: ' + (r.autos.length ? esc(r.autos.join(", ")) : "nessuno") + '. ' + (isModel ? "Costo della composizione" : "Costo di un punto") + ': ' + eur(r.unit) + '.</p>'
+    + r.warn.map(w => '<p class="warn">' + esc(w) + '</p>').join("")
+    + '<div class="row">' + azioni + '</div>'
+    + '</div>';
+}
+
+/* ---------- Vista Ambienti ---------- */
+function vAmbienti(){
+  const t = totals();
+  const perA = new Map(t.perAmb.map(x => [x.a.id, x]));
+  const leg = (k, l) => '<span><i class="sw k-' + k + '"></i>' + l + '</span>';
+  return '<div class="legend">' + leg("presa","Prese") + leg("comando","Comandi") + leg("segnale","TV, dati, USB") + leg("vuoto","Copriforo") + '</div>'
+    + state.ambienti.map(a => roomHTML(a, perA.get(a.id))).join("")
+    + '<div class="addroom"><input id="newRoom" placeholder="Nome del nuovo ambiente" aria-label="Nome del nuovo ambiente"><button class="btn" data-act="addRoom">Aggiungi</button></div>';
+}
+function modelOptions(){
+  const sorted = state.modelli.slice().sort((x,y) => x.formato - y.formato);
+  if(!ui.preset || !state.modelli.some(m => m.id === ui.preset)) ui.preset = sorted.length ? sorted[0].id : null;
+  return FORMATI.map(f => {
+    const ms = sorted.filter(m => m.formato === f);
+    return ms.length ? '<optgroup label="' + f + ' moduli">' + ms.map(m => '<option value="' + m.id + '"' + (m.id === ui.preset ? " selected" : "") + '>' + esc(m.nome) + '</option>').join("") + '</optgroup>' : "";
+  }).join("");
+}
+function roomHTML(a, x){
+  const open = ui.openRooms.has(a.id);
+  const att = a.punti.some(hasAtt);
+  let body = "";
+  if(open){
+    body = '<div class="room-body">'
+      + '<div class="room-tools"><label class="field"><span>Nome ambiente</span><input data-f="roomName" value="' + esc(a.nome) + '"></label>'
+      + '<label class="chk"><input type="checkbox" data-f="roomExt"' + (a.esterno ? " checked" : "") + '> Esterno, placche IP55</label></div>'
+      + (a.punti.length ? a.punti.map(p => ptHTML(a, p)).join("") : '<p class="empty">Nessun punto. Scegli una composizione e aggiungi il primo.</p>')
+      + (state.modelli.length
+          ? '<div class="addpt"><select data-sel="preset" aria-label="Composizione del punto">' + modelOptions() + '</select><button class="btn" data-act="addPoint">Aggiungi punto</button></div>'
+          : '<p class="empty">Non ci sono composizioni: creane una nella scheda Composizioni.</p>')
+      + '<button class="btn danger" data-act="delRoom">Elimina ambiente</button>'
+      + '</div>';
+  }
+  return '<section class="room' + (open ? " open" : "") + '" data-r="' + a.id + '">'
+    + '<button class="room-h" data-act="toggleRoom" aria-expanded="' + open + '">' + chev
+    + '<span class="nm" data-oname="' + a.id + '">' + esc(a.nome) + '</span>'
+    + (att ? '<span class="att" title="Contiene note da attenzionare">⚑</span>' : '')
+    + (a.esterno ? '<span class="tag">IP55</span>' : '')
+    + '<span class="meta num">' + x.punti + (x.punti === 1 ? " punto" : " punti") + '</span>'
+    + '<span class="cost num">' + eur(x.tot) + '</span></button>'
+    + body + '</section>';
+}
+function ptHTML(a, p){
+  const r = calcPunto(p, a);
+  const open = ui.openPoint === p.id;
+  const desc = (p.qta > 1 ? p.qta + " punti uguali, " : "") + (p.altezza === "terra" ? "a terra" : "altezza uomo") + ", " + p.formato + " moduli"
+    + (piantaSrc() ? ", in pianta " + p.pos.length + " di " + p.qta : "");
+  return '<article class="pt' + (open ? " open" : "") + '" data-p="' + p.id + '">'
+    + '<button class="pt-row" data-act="togglePoint" aria-expanded="' + open + '">' + plateHTML(p)
+    + '<span class="pt-info"><b data-oname="' + p.id + '">' + esc(p.nome) + '</b><small>' + desc + '</small>' + flagLine(p)
+    + (r.warn.length ? '<small class="warn">' + (r.warn.length === 1 ? "1 problema da sistemare" : r.warn.length + " problemi da sistemare") + '</small>' : '')
+    + '</span><span class="pt-cost num">' + eur(r.tot) + '</span></button>'
+    + (open ? edHTML(p, r, false) : "") + '</article>';
+}
+
+/* ---------- Vista Composizioni ---------- */
+function vComposizioni(){
+  let out = '<p class="note">Sono le combinazioni che trovi quando aggiungi un punto in un ambiente. Modificale, creane di nuove o, dall’editor di un punto, salva il punto come composizione. Cambiare una composizione non modifica i punti già inseriti.</p>';
+  FORMATI.forEach(f => {
+    const ms = state.modelli.filter(m => m.formato === f);
+    if(!ms.length) return;
+    out += '<h2>' + f + ' moduli</h2><div class="list">' + ms.map(mHTML).join("") + '</div>';
+  });
+  if(!state.modelli.length) out += '<p class="empty">Nessuna composizione. Creane una per usarla negli ambienti.</p>';
+  out += '<p style="margin-top:18px"><button class="btn" data-act="mAdd">Nuova composizione</button></p>';
+  return out;
+}
+function mHTML(m){
+  const r = calcPunto(Object.assign({}, m, {qta:1}), {esterno:false});
+  const open = ui.openModel === m.id;
+  const nf = m.frutti.reduce((s,f) => s + f.qta, 0);
+  return '<article class="pt' + (open ? " open" : "") + '" data-m="' + m.id + '">'
+    + '<button class="pt-row" data-act="toggleModel" aria-expanded="' + open + '">' + plateHTML(m)
+    + '<span class="pt-info"><b data-oname="' + m.id + '">' + esc(m.nome) + '</b><small>' + (m.altezza === "terra" ? "a terra" : "altezza uomo") + ', ' + nf + (nf === 1 ? " frutto" : " frutti") + '</small>' + flagLine(m)
+    + (r.warn.length ? '<small class="warn">' + esc(r.warn[0]) + '</small>' : '')
+    + '</span><span class="pt-cost num">' + eur(r.unit) + '</span></button>'
+    + (open ? edHTML(m, r, true) : "") + '</article>';
+}
+
+/* ---------- Vista Listino ---------- */
+function vListino(){
+  const groups = CAT.map(cat => ({cat, items:state.componenti.filter(c => c.categoria === cat)})).filter(g => g.items.length);
+  const lrow = c => '<div class="lrow" data-c="' + c.id + '">'
+    + '<input class="l-nome" data-f="cNome" value="' + esc(c.nome) + '" aria-label="Nome">'
+    + '<input class="l-sigla" data-f="cSigla" value="' + esc(c.sigla) + '" maxlength="6" placeholder="Sigla" aria-label="Sigla sulla placca">'
+    + '<select class="l-cat" data-f="cCat" aria-label="Categoria">' + CAT.map(k => '<option' + (k === c.categoria ? " selected" : "") + '>' + k + '</option>').join("") + '</select>'
+    + '<label class="suf l-mod"><input data-f="cMod" inputmode="numeric" value="' + c.moduli + '" aria-label="Moduli"><span>mod</span></label>'
+    + '<label class="suf l-prezzo"><input data-f="cPrezzo" inputmode="decimal" value="' + numStr(c.prezzo) + '" aria-label="Prezzo unitario"><span>€</span></label>'
+    + '<button class="x l-del" data-act="delComp" aria-label="Elimina ' + esc(c.nome) + '">×</button></div>';
+  return '<p class="note">I prezzi iniziali sono solo indicativi: sostituiscili con quelli del tuo fornitore, IVA esclusa. Scatola, supporto, placca e copriforo vengono scelti in automatico in base al formato di ogni punto. La sigla è il testo che compare sul disegno della placca.</p>'
+    + '<div class="lhead"><span>Nome</span><span>Sigla</span><span>Categoria</span><span>Moduli</span><span>Prezzo</span><span></span></div>'
+    + groups.map(g => '<section class="lgrp"><h3>' + CAT_LABEL[g.cat] + '</h3>' + g.items.map(lrow).join("") + '</section>').join("")
+    + '<p style="margin-top:18px"><button class="btn" data-act="addComp">Aggiungi componente</button></p>';
+}
+
+/* ---------- Vista Pianta ---------- */
+function piantaSrc(){
+  if(state.pianta && state.pianta.assetId && !ui.srcFailed) return "/_blob/" + state.pianta.assetId;
+  return state.pianta ? piantaLocal : null;
+}
+function findP(pid){
+  for(const a of state.ambienti){ const p = a.punti.find(x => x.id === pid); if(p) return {a, p}; }
+  return {a:null, p:null};
+}
+const markerCat = p => { const f = p.frutti.map(f => comp(f.compId)).find(c => c && +c.moduli > 0); return f ? catKey(f.categoria) : "altro"; };
+function vPianta(){
+  const src = piantaSrc();
+  if(!src){
+    return '<div class="pempty"><p style="margin:0">Carica l’immagine della planimetria (foto, screenshot o esportazione dal CAD), poi posiziona ogni punto nella sua stanza.</p>'
+      + (state.pianta && state.pianta.assetId ? '<p class="warn">La planimetria salvata non è raggiungibile da qui: caricala di nuovo.</p>' : '')
+      + '<button class="btn" data-act="pUpload">Carica planimetria</button></div>';
+  }
+  return '<div class="pbar"><div class="seg" aria-label="Zoom"><button data-act="pZoom" data-d="-1" aria-label="Riduci">−</button><output id="zl" class="num">' + Math.round(ui.zoom * 100) + '%</output><button data-act="pZoom" data-d="1" aria-label="Ingrandisci">+</button></div>'
+    + '<span class="grow"></span><button class="btn sec" data-act="pUpload">Cambia planimetria</button><button class="btn danger" data-act="pRemove">Rimuovi</button></div>'
+    + '<div class="mapwrap" id="mapwrap"><div class="map' + (ui.arm ? " arm" : "") + '" id="map" style="width:' + (ui.zoom * 100) + '%"><img id="pimg" alt="Planimetria" draggable="false" src="' + esc(src) + '"><div id="markers"></div></div></div>'
+    + '<div class="legend" style="margin-top:10px"><span><i class="sw round k-presa"></i>A terra</span><span><i class="sw sq k-presa"></i>Altezza uomo</span><span><i class="sw k-presa"></i>Prese</span><span><i class="sw k-comando"></i>Comandi</span><span><i class="sw k-segnale"></i>TV, dati, USB</span><span class="att">! Da attenzionare</span></div>'
+    + '<div id="pop"></div><div class="tray" id="tray"></div>';
+}
+function refreshPianta(){
+  const mk = $("#markers"), tray = $("#tray"), pop = $("#pop"), map = $("#map");
+  if(!mk) return;
+  map.classList.toggle("arm", !!ui.arm);
+  let html = "";
+  for(const a of state.ambienti) for(const p of a.punti){
+    p.pos.forEach((q, i) => {
+      const sel = ui.sel && ui.sel.pid === p.id && ui.sel.i === i;
+      const dim = ui.pRoom && ui.pRoom !== a.id;
+      html += '<button class="mk k-' + markerCat(p) + (p.altezza === "uomo" ? " uomo" : "") + (sel ? " sel" : "") + (dim ? " dim" : "") + '" data-mk data-pid="' + p.id + '" data-ui="' + i + '" style="left:' + (q.x * 100) + '%;top:' + (q.y * 100) + '%" aria-label="' + esc(p.nome + ", " + a.nome) + '">' + (hasAtt(p) ? '<i>!</i>' : '') + '</button>';
+    });
+  }
+  mk.innerHTML = html;
+
+  let ph = "";
+  if(ui.sel){
+    const {a, p} = findP(ui.sel.pid);
+    if(p && p.pos[ui.sel.i]){
+      const fr = p.frutti.map(f => { const c = comp(f.compId); return c ? f.qta + "× " + c.nome : ""; }).filter(Boolean).join(", ");
+      const notes = [];
+      if(p.flag || p.nota) notes.push((p.flag ? "⚑ " : "") + (p.nota || "Da attenzionare"));
+      p.frutti.forEach(f => { if(f.flag || f.nota){ const c = comp(f.compId); notes.push((f.flag ? "⚑ " : "") + (c ? c.nome + ": " : "") + (f.nota || "Da attenzionare")); } });
+      ph = '<div class="popc"><div><b>' + esc(p.nome) + '</b><small>' + esc(a.nome) + ', ' + (p.altezza === "terra" ? "a terra" : "altezza uomo") + ', ' + p.formato + ' moduli' + (p.qta > 1 ? ', unità ' + (ui.sel.i + 1) + ' di ' + p.qta : '') + '</small>'
+        + (fr ? '<small>' + esc(fr) + '</small>' : '') + notes.map(n => '<small class="' + (n.startsWith("⚑") ? "att" : "") + '">' + esc(n) + '</small>').join("") + '</div>'
+        + '<div class="row"><button class="btn sec" data-act="pOpen">Modifica punto</button><button class="btn sec" data-act="pUnplace">Togli dalla pianta</button><button class="btn danger" data-act="pClose">Chiudi</button></div></div>';
+    } else ui.sel = null;
+  }
+  pop.innerHTML = ph;
+
+  let th = '<div class="row"><label class="field" style="flex:1;min-width:200px"><span>Ambiente</span><select id="pRoom"><option value="">Tutti gli ambienti</option>'
+    + state.ambienti.map(a => '<option value="' + a.id + '"' + (a.id === ui.pRoom ? " selected" : "") + '>' + esc(a.nome) + '</option>').join("") + '</select></label></div>';
+  if(ui.arm){
+    const {p} = findP(ui.arm);
+    if(p && p.pos.length < p.qta) th += '<div class="hint"><span>Tocca la pianta dove va «' + esc(p.nome) + '»' + (p.qta - p.pos.length > 1 ? ' (ne restano ' + (p.qta - p.pos.length) + ')' : '') + '.</span><button class="btn sec" data-act="pDisarm">Annulla</button></div>';
+    else ui.arm = null;
+  }
+  const todo = [];
+  for(const a of state.ambienti){
+    if(ui.pRoom && ui.pRoom !== a.id) continue;
+    for(const p of a.punti) if(p.pos.length < p.qta) todo.push({a, p});
+  }
+  const totPunti = state.ambienti.reduce((s,a) => s + a.punti.length, 0);
+  if(!totPunti) th += '<p class="empty">Aggiungi prima i punti negli ambienti.</p>';
+  else if(!todo.length) th += '<p class="empty">Tutti i punti' + (ui.pRoom ? " di questo ambiente" : "") + ' sono sulla pianta. Trascina un simbolo per spostarlo, toccalo per i dettagli.</p>';
+  else th += '<p class="note">Da posizionare: tocca un punto, poi tocca la pianta. I simboli già messi si spostano trascinandoli.</p><div class="chips">'
+    + todo.map(({a, p}) => '<button class="chip' + (ui.arm === p.id ? " on" : "") + '" data-act="pArm" data-pid="' + p.id + '"><i class="sw ' + (p.altezza === "uomo" ? "sq" : "round") + ' k-' + markerCat(p) + '"></i><span>' + esc(p.nome) + '<small>' + esc(a.nome) + ', ' + (p.qta - p.pos.length) + ' da mettere' + (hasAtt(p) ? ', ⚑' : '') + '</small></span></button>').join("")
+    + '</div>';
+  tray.innerHTML = th;
+}
+function afterRenderPianta(){
+  const img = $("#pimg");
+  if(img) img.addEventListener("error", () => {
+    if(!ui.srcFailed && state.pianta && state.pianta.assetId){ ui.srcFailed = true; render(); }
+  }, {once:true});
+  refreshPianta();
+}
+
+async function loadImage(url){
+  return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = url; });
+}
+async function caricaPianta(file){
+  toast("Carico la planimetria…");
+  let im;
+  const u = URL.createObjectURL(file);
+  try { im = await loadImage(u); } catch(e){ toast("Immagine non leggibile: prova con JPG o PNG"); return; }
+  finally { URL.revokeObjectURL(u); }
+  const max = 2200, sc = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
+  const w = Math.round(im.naturalWidth * sc), h = Math.round(im.naturalHeight * sc);
+  const cv = document.createElement("canvas");
+  cv.width = w; cv.height = h;
+  const cx = cv.getContext("2d");
+  cx.fillStyle = "#fff"; cx.fillRect(0, 0, w, h);
+  cx.drawImage(im, 0, 0, w, h);
+  const dataUrl = cv.toDataURL("image/jpeg", 0.85);
+  const blob = await new Promise(r => cv.toBlob(r, "image/jpeg", 0.85));
+  piantaLocal = dataUrl;
+  try { localStorage.setItem(KEY_IMG, dataUrl); } catch(e){}
+  const oldId = state.pianta && state.pianta.assetId;
+  let assetId = null;
+  const assets = await use("assets");
+  if(assets && blob){
+    try { const r = await assets.upload(blob, {type:"image/jpeg"}); assetId = r.id; } catch(e){ assetId = null; }
+    if(oldId && assetId){ try { await assets.delete(oldId); } catch(e){} }
+  }
+  state.pianta = {assetId, w, h};
+  ui.srcFailed = false;
+  scheduleSave(); render();
+  toast(assetId ? "Planimetria caricata e salvata nel progetto" : "Planimetria caricata su questo dispositivo");
+}
+$("#imgIn").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if(f) caricaPianta(f);
+});
+
+/* Trascinamento e posizionamento */
+let drag = null;
+document.addEventListener("pointerdown", e => {
+  const m = e.target.closest(".mk");
+  if(!m) return;
+  e.preventDefault();
+  const rect = $("#map").getBoundingClientRect();
+  drag = {el:m, pid:m.dataset.pid, i:+m.dataset.ui, sx:e.clientX, sy:e.clientY, rect, moved:false, x:0, y:0};
+  try { m.setPointerCapture(e.pointerId); } catch(err){}
+});
+document.addEventListener("pointermove", e => {
+  if(!drag) return;
+  if(!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 5) return;
+  drag.moved = true;
+  drag.x = Math.min(1, Math.max(0, (e.clientX - drag.rect.left) / drag.rect.width));
+  drag.y = Math.min(1, Math.max(0, (e.clientY - drag.rect.top) / drag.rect.height));
+  drag.el.style.left = (drag.x * 100) + "%";
+  drag.el.style.top = (drag.y * 100) + "%";
+});
+function endDrag(){
+  if(!drag) return;
+  const d = drag; drag = null;
+  const {p} = findP(d.pid);
+  if(!p) return;
+  if(d.moved){ p.pos[d.i] = {x:d.x, y:d.y}; ui.sel = {pid:d.pid, i:d.i}; scheduleSave(); }
+  else { ui.sel = (ui.sel && ui.sel.pid === d.pid && ui.sel.i === d.i) ? null : {pid:d.pid, i:d.i}; ui.arm = null; }
+  refreshPianta();
+}
+document.addEventListener("pointerup", endDrag);
+document.addEventListener("pointercancel", () => { drag = null; refreshPianta(); });
+document.addEventListener("click", e => {
+  const map = e.target.closest("#map");
+  if(!map || e.target.closest(".mk")) return;
+  if(ui.arm){
+    const {p} = findP(ui.arm);
+    if(!p || p.pos.length >= p.qta){ ui.arm = null; refreshPianta(); return; }
+    const r = map.getBoundingClientRect();
+    if(!r.width || !r.height) return;
+    p.pos.push({x:Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y:Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))});
+    if(p.pos.length >= p.qta) ui.arm = null;
+    ui.sel = null;
+    scheduleSave(); refreshPianta();
+  } else if(ui.sel){ ui.sel = null; refreshPianta(); }
+});
+
+/* ---------- Vista Riepilogo ---------- */
+function vRiepilogo(){
+  const t = totals();
+  const zero = t.bom.filter(e => !e.c.prezzo).map(e => e.c.nome);
+  const notes = noteList();
+  const nAtt = notes.filter(n => n.flag).length;
+  let out = '<div class="totbox">'
+    + '<div><span>Imponibile</span><b id="r-imp" class="num">' + eur(t.imp) + '</b></div>'
+    + '<div><span><label class="chk" style="padding:0"><input type="checkbox" data-f="ivaOn"' + (state.ivaAttiva ? " checked" : "") + '> IVA</label>'
+    + '<label class="suf ivap"><input data-f="iva" inputmode="decimal" value="' + numStr(state.iva) + '" aria-label="Aliquota IVA"><span>%</span></label></span>'
+    + '<b id="r-iva" class="num">' + eur(t.iva) + '</b></div>'
+    + '<div class="tot"><span>Totale</span><b id="r-tot" class="num">' + eur(t.tot) + '</b></div></div>'
+    + '<p class="counts num">' + t.punti + (t.punti === 1 ? " punto" : " punti") + ' in tutto: ' + t.terra + ' a terra, ' + t.uomo + ' ad altezza uomo'
+    + (piantaSrc() ? '. Sulla pianta: ' + t.piazzati + ' di ' + t.punti : '') + '.</p>';
+  if(nAtt) out += '<div class="warnbox a"><b class="att">⚑ ' + nAtt + (nAtt === 1 ? " nota da attenzionare" : " note da attenzionare") + '</b><ul>' + notes.filter(n => n.flag).map(n => '<li>' + esc(n.a.nome + ", " + n.p.nome + (n.el === "Punto" ? "" : ", " + n.el)) + (n.testo ? ': ' + esc(n.testo) : '') + '</li>').join("") + '</ul></div>';
+  if(t.warns.length) out += '<div class="warnbox"><b>Da sistemare</b><ul>' + t.warns.map(w => '<li>' + esc(w) + '</li>').join("") + '</ul></div>';
+  if(zero.length) out += '<div class="warnbox"><b>Componenti usati senza prezzo</b><ul>' + zero.map(n => '<li>' + esc(n) + '</li>').join("") + '</ul></div>';
+  if(!t.punti){
+    out += '<p class="empty" style="margin-top:20px">Aggiungi punti negli ambienti per vedere importi e distinta materiali.</p>';
+  } else {
+    out += '<h2>Per ambiente</h2><div class="tblwrap"><table><thead><tr><th>Ambiente</th><th class="r">Punti</th><th class="r">Importo</th></tr></thead><tbody>'
+      + t.perAmb.map(x => '<tr><td>' + esc(x.a.nome) + '</td><td class="r num">' + x.punti + '</td><td class="r num">' + eur(x.tot) + '</td></tr>').join("")
+      + '</tbody><tfoot><tr><th>Imponibile</th><td class="r num">' + t.punti + '</td><td class="r num">' + eur(t.imp) + '</td></tr></tfoot></table></div>'
+      + '<h2>Distinta materiali</h2><div class="tblwrap"><table><thead><tr><th>Componente</th><th class="r">Q.tà</th><th class="r">Prezzo</th><th class="r">Importo</th></tr></thead><tbody>'
+      + t.bom.map(e => '<tr><td>' + esc(e.c.nome) + '<br><small>' + esc(e.c.categoria) + '</small></td><td class="r num">' + e.q + '</td><td class="r num">' + eur(e.c.prezzo) + '</td><td class="r num">' + eur(e.c.prezzo * e.q) + '</td></tr>').join("")
+      + '</tbody><tfoot><tr><th>Imponibile</th><td></td><td></td><td class="r num">' + eur(t.imp) + '</td></tr></tfoot></table></div>';
+  }
+  if(notes.length){
+    out += '<h2>Note e accorgimenti</h2><div class="tblwrap"><table><thead><tr><th>Dove</th><th>Nota</th></tr></thead><tbody>'
+      + notes.map(n => '<tr><td>' + esc(n.a.nome) + '<br><small>' + esc(n.p.nome + (n.el === "Punto" ? "" : ", " + n.el)) + '</small></td><td>' + (n.flag ? '<span class="att">⚑ Da attenzionare</span><br>' : '') + esc(n.testo) + '</td></tr>').join("")
+      + '</tbody></table></div>';
+  }
+  out += '<h2>File</h2><div class="row"><button class="btn" data-act="exportCsv">Esporta CSV per Excel</button><button class="btn sec" data-act="exportJson">Scarica backup</button><button class="btn sec" data-act="importJson">Carica backup</button></div>'
+    + '<p class="note" style="margin-top:10px">Il progetto si salva da solo a ogni modifica. Il backup contiene anche la planimetria e serve a conservarne una copia o a spostarlo altrove.</p>'
+    + '<p style="margin-top:18px"><button class="btn danger" data-act="resetAll">Ricomincia da zero</button></p>';
+  return out;
+}
+
+/* ---------- Render ---------- */
+function render(){
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === ui.tab)));
+  const m = $("#main");
+  const views = {ambienti:vAmbienti, composizioni:vComposizioni, listino:vListino, pianta:vPianta, riepilogo:vRiepilogo};
+  const wrap = $("#mapwrap");
+  const sc = wrap ? [wrap.scrollLeft, wrap.scrollTop] : null;
+  m.innerHTML = views[ui.tab]();
+  if(ui.tab === "pianta"){
+    afterRenderPianta();
+    const w2 = $("#mapwrap");
+    if(w2 && sc){ w2.scrollLeft = sc[0]; w2.scrollTop = sc[1]; }
+  }
+  updateTotals();
+}
+function updateTotals(){
+  const t = totals();
+  $("#grand").textContent = eur(t.tot);
+  $("#grandLbl").textContent = state.ivaAttiva ? "totale, IVA " + numStr(state.iva) + "% inclusa" : "totale, IVA esclusa";
+  const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  set("r-imp", eur(t.imp)); set("r-iva", eur(t.iva)); set("r-tot", eur(t.tot));
+}
+
+/* ---------- Dialoghi ---------- */
+function ask(msg, okLabel){
+  return new Promise(res => {
+    const d = document.createElement("div");
+    d.className = "modal";
+    d.innerHTML = '<div role="dialog" aria-modal="true"><p>' + esc(msg) + '</p><div class="row"><button class="btn sec" data-k="0">Annulla</button><button class="btn" data-k="1">' + esc(okLabel) + '</button></div></div>';
+    d.addEventListener("click", e => {
+      e.stopPropagation();
+      const b = e.target.closest("[data-k]");
+      if(b || e.target === d){ d.remove(); res(!!(b && b.dataset.k === "1")); }
+    });
+    document.body.appendChild(d);
+    d.querySelector('[data-k="1"]').focus();
+  });
+}
+let toastT;
+function toast(msg){
+  let el = $(".toast");
+  if(!el){ el = document.createElement("div"); el.className = "toast"; el.setAttribute("role","status"); document.body.appendChild(el); }
+  el.textContent = msg;
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.remove(), 2800);
+}
+
+/* ---------- File ---------- */
+async function saveFile(name, text, mime){
+  const d = await use("downloads");
+  if(d){
+    try { await d.save({filename:name, data:text}); }
+    catch(e){ if(!e || e.code !== "declined") toast("Download non disponibile in questa vista"); }
+    return;
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type:mime}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+}
+function buildCsv(){
+  const t = totals();
+  const fix = n => (n || 0).toFixed(2).replace(".",",");
+  const cell = v => { v = String(v == null ? "" : v); return /[;"\n\r]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
+  const notes = noteList();
+  const rows = [];
+  if(notes.some(n => n.flag)){
+    rows.push(["ATTENZIONE: ci sono note da attenzionare, vedi la sezione Note e accorgimenti"], []);
+  }
+  rows.push(["Distinta materiali"],["Componente","Categoria","Moduli","Quantità","Prezzo unitario","Importo"]);
+  t.bom.forEach(e => rows.push([e.c.nome, e.c.categoria, e.c.moduli, e.q, fix(e.c.prezzo), fix(e.c.prezzo * e.q)]));
+  rows.push([], ["Imponibile","","","","",fix(t.imp)]);
+  if(state.ivaAttiva) rows.push(["IVA " + numStr(state.iva) + "%","","","","",fix(t.iva)]);
+  rows.push(["Totale","","","","",fix(t.tot)], [], ["Per ambiente"], ["Ambiente","Punti","Importo"]);
+  t.perAmb.forEach(x => rows.push([x.a.nome, x.punti, fix(x.tot)]));
+  rows.push([], ["Dettaglio punti"], ["Ambiente","Punto","Quantità","Posizione","Formato","Frutti","Importo","Da attenzionare","Note"]);
+  state.ambienti.forEach(a => a.punti.forEach(p => {
+    const r = calcPunto(p, a);
+    const fr = p.frutti.map(f => { const c = comp(f.compId); return c ? f.qta + "× " + c.nome : ""; }).filter(Boolean).join(", ");
+    const nt = [p.nota].concat(p.frutti.filter(f => f.nota).map(f => { const c = comp(f.compId); return (c ? c.nome + ": " : "") + f.nota; })).filter(Boolean).join(" | ");
+    rows.push([a.nome, p.nome, p.qta, p.altezza === "terra" ? "A terra" : "Altezza uomo", p.formato + " moduli", fr, fix(r.tot), hasAtt(p) ? "SÌ" : "", nt]);
+  }));
+  if(notes.length){
+    rows.push([], ["Note e accorgimenti"], ["Ambiente","Punto","Elemento","Da attenzionare","Nota"]);
+    notes.forEach(n => rows.push([n.a.nome, n.p.nome, n.el, n.flag ? "SÌ" : "", n.testo]));
+  }
+  return "\ufeff" + rows.map(r => r.map(cell).join(";")).join("\r\n");
+}
+async function srcToDataUrl(src){
+  if(!src) return null;
+  if(src.startsWith("data:")) return src;
+  try {
+    const b = await (await fetch(src)).blob();
+    return await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); });
+  } catch(e){ return null; }
+}
+const stamp = () => new Date().toISOString().slice(0,10);
+$("#fileIn").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if(!f) return;
+  let raw = null, obj = null;
+  try { raw = JSON.parse(await f.text()); obj = normalize(JSON.parse(JSON.stringify(raw))); } catch(err){ obj = null; }
+  if(!obj){ toast("Il file non è un backup valido di questo strumento"); return; }
+  if(!(await ask("Il backup sostituirà il progetto attuale. Continuare?", "Carica backup"))) return;
+  const img = raw && typeof raw.piantaDataUrl === "string" && raw.piantaDataUrl.startsWith("data:image") ? raw.piantaDataUrl : null;
+  if(img){
+    piantaLocal = img;
+    try { localStorage.setItem(KEY_IMG, img); } catch(err){}
+    obj.pianta = {assetId:null, w:(obj.pianta && obj.pianta.w) || 0, h:(obj.pianta && obj.pianta.h) || 0};
+    const assets = await use("assets");
+    if(assets){
+      try { const b = await (await fetch(img)).blob(); const r = await assets.upload(b, {type:b.type || "image/jpeg"}); obj.pianta.assetId = r.id; } catch(err){}
+    }
+  }
+  state = obj; ui.openRooms.clear(); ui.openPoint = null; ui.openModel = null; ui.sel = null; ui.arm = null; ui.srcFailed = false;
+  scheduleSave(); render(); toast("Backup caricato");
+});
+
+/* ---------- Interazioni ---------- */
+function ctx(el){
+  const rEl = el.closest("[data-r]"), pEl = el.closest("[data-p]"), cEl = el.closest("[data-c]"), mEl = el.closest("[data-m]");
+  const a = rEl ? state.ambienti.find(x => x.id === rEl.dataset.r) : null;
+  const p = a && pEl ? a.punti.find(x => x.id === pEl.dataset.p) : null;
+  const c = cEl ? comp(cEl.dataset.c) : null;
+  const m = mEl ? state.modelli.find(x => x.id === mEl.dataset.m) : null;
+  return {a, p, c, m, o:p || m};
+}
+function changed(){ scheduleSave(); render(); }
+const copyFrutti = fr => fr.map(f => ({compId:f.compId, qta:f.qta, flag:!!f.flag, nota:f.nota || ""}));
+
+document.addEventListener("click", async e => {
+  const t = e.target.closest("[data-act]");
+  if(!t) return;
+  const act = t.dataset.act, d = +t.dataset.d || 0, i = +t.dataset.i;
+  const {a, p, c, m, o} = ctx(t);
+  switch(act){
+    case "tab": ui.tab = t.dataset.tab; ui.arm = null; render(); window.scrollTo(0,0); break;
+    case "toggleRoom":
+      if(ui.openRooms.has(a.id)) ui.openRooms.delete(a.id); else ui.openRooms.add(a.id);
+      render(); break;
+    case "addRoom": {
+      const inp = $("#newRoom");
+      const nome = (inp.value || "").trim() || "Nuovo ambiente";
+      const r = {id:uid(), nome, esterno:false, punti:[]};
+      state.ambienti.push(r); ui.openRooms.add(r.id);
+      changed(); break;
+    }
+    case "delRoom":
+      if(await ask("Eliminare «" + a.nome + "» con tutti i suoi punti?", "Elimina ambiente")){
+        state.ambienti = state.ambienti.filter(x => x !== a); changed();
+      }
+      break;
+    case "addPoint": {
+      const sel = t.closest(".room-body").querySelector('[data-sel="preset"]');
+      const md = state.modelli.find(x => x.id === sel.value);
+      if(!md) break;
+      ui.preset = md.id;
+      const np = {id:uid(), nome:md.nome, qta:1, altezza:md.altezza, formato:md.formato, flag:!!md.flag, nota:md.nota || "", pos:[], frutti:copyFrutti(md.frutti)};
+      a.punti.push(np); ui.openPoint = np.id;
+      changed(); break;
+    }
+    case "togglePoint": ui.openPoint = ui.openPoint === p.id ? null : p.id; render(); break;
+    case "toggleModel": ui.openModel = ui.openModel === m.id ? null : m.id; render(); break;
+    case "ptQty":
+      p.qta = Math.max(1, p.qta + d);
+      if(p.pos.length > p.qta) p.pos.length = p.qta;
+      changed(); break;
+    case "oAlt": o.altezza = t.dataset.v; changed(); break;
+    case "oFmt": o.formato = +t.dataset.v; changed(); break;
+    case "frQty":
+      o.frutti[i].qta += d;
+      if(o.frutti[i].qta < 1){ o.frutti.splice(i, 1); ui.noteOpen.clear(); }
+      changed(); break;
+    case "frDel": o.frutti.splice(i, 1); ui.noteOpen.clear(); changed(); break;
+    case "fNote": {
+      const key = o.id + ":" + i;
+      if(ui.noteOpen.has(key)) ui.noteOpen.delete(key); else ui.noteOpen.add(key);
+      render();
+      if(ui.noteOpen.has(key)){ const inp = document.querySelector('[data-f="fNota"][data-i="' + i + '"]'); if(inp) inp.focus(); }
+      break;
+    }
+    case "frAdd": {
+      const sel = t.closest(".ed").querySelector('[data-sel="frutto"]');
+      if(!sel || !sel.value) break;
+      const ex = o.frutti.find(f => f.compId === sel.value && !f.nota && !f.flag);
+      if(ex) ex.qta++; else o.frutti.push({compId:sel.value, qta:1, flag:false, nota:""});
+      changed(); break;
+    }
+    case "ptDup": {
+      const cp = JSON.parse(JSON.stringify(p));
+      cp.id = uid(); cp.nome = p.nome + " (copia)"; cp.pos = [];
+      a.punti.splice(a.punti.indexOf(p) + 1, 0, cp); ui.openPoint = cp.id;
+      changed(); break;
+    }
+    case "ptSave": {
+      const nm = {id:uid(), nome:p.nome, formato:p.formato, altezza:p.altezza, flag:p.flag, nota:p.nota, frutti:copyFrutti(p.frutti)};
+      state.modelli.push(nm); ui.preset = nm.id;
+      scheduleSave(); toast("Composizione «" + p.nome + "» salvata");
+      break;
+    }
+    case "ptDel":
+      if(await ask("Eliminare il punto «" + p.nome + "»?", "Elimina punto")){
+        a.punti = a.punti.filter(x => x !== p); changed();
+      }
+      break;
+    case "mAdd": {
+      const nm = {id:uid(), nome:"Nuova composizione", formato:3, altezza:"terra", flag:false, nota:"", frutti:[]};
+      state.modelli.push(nm); ui.openModel = nm.id;
+      changed();
+      const inp = document.querySelector('[data-m="' + nm.id + '"] [data-f="oNome"]');
+      if(inp){ inp.scrollIntoView({block:"center"}); inp.focus(); inp.select(); }
+      break;
+    }
+    case "mDup": {
+      const cp = JSON.parse(JSON.stringify(m));
+      cp.id = uid(); cp.nome = m.nome + " (copia)";
+      state.modelli.splice(state.modelli.indexOf(m) + 1, 0, cp); ui.openModel = cp.id;
+      changed(); break;
+    }
+    case "mDel":
+      if(await ask("Eliminare la composizione «" + m.nome + "»? I punti già inseriti restano come sono.", "Elimina composizione")){
+        state.modelli = state.modelli.filter(x => x !== m); changed();
+      }
+      break;
+    case "addComp": {
+      const nc = {id:uid(), nome:"Nuovo componente", sigla:"", categoria:"Presa", moduli:1, prezzo:0};
+      state.componenti.push(nc); changed();
+      const inp = document.querySelector('[data-c="' + nc.id + '"] .l-nome');
+      if(inp){ inp.scrollIntoView({block:"center"}); inp.focus(); inp.select(); }
+      break;
+    }
+    case "delComp": {
+      const inUso = state.ambienti.reduce((n, aa) => n + aa.punti.filter(pp => pp.frutti.some(f => f.compId === c.id)).length, 0);
+      const msg = inUso ? "«" + c.nome + "» è usato in " + inUso + (inUso === 1 ? " punto" : " punti") + ": verrà tolto anche da lì e dalle composizioni. Eliminare?" : "Eliminare «" + c.nome + "» dal listino?";
+      if(await ask(msg, "Elimina componente")){
+        state.componenti = state.componenti.filter(x => x !== c);
+        state.ambienti.forEach(aa => aa.punti.forEach(pp => { pp.frutti = pp.frutti.filter(f => f.compId !== c.id); }));
+        state.modelli.forEach(mm => { mm.frutti = mm.frutti.filter(f => f.compId !== c.id); });
+        changed();
+      }
+      break;
+    }
+    case "pUpload": $("#imgIn").click(); break;
+    case "pRemove":
+      if(await ask("Rimuovere la planimetria? Le posizioni dei punti vengono cancellate.", "Rimuovi")){
+        const oldId = state.pianta && state.pianta.assetId;
+        state.pianta = null; piantaLocal = null;
+        try { localStorage.removeItem(KEY_IMG); } catch(err){}
+        state.ambienti.forEach(aa => aa.punti.forEach(pp => { pp.pos = []; }));
+        ui.sel = null; ui.arm = null;
+        changed();
+        if(oldId){ const assets = await use("assets"); if(assets){ try { await assets.delete(oldId); } catch(err){} } }
+      }
+      break;
+    case "pZoom": {
+      const k = Math.max(0, Math.min(ZOOMS.length - 1, ZOOMS.indexOf(ui.zoom) + d));
+      ui.zoom = ZOOMS[k];
+      $("#map").style.width = (ui.zoom * 100) + "%";
+      $("#zl").textContent = Math.round(ui.zoom * 100) + "%";
+      break;
+    }
+    case "pArm": ui.arm = ui.arm === t.dataset.pid ? null : t.dataset.pid; ui.sel = null; refreshPianta(); break;
+    case "pDisarm": ui.arm = null; refreshPianta(); break;
+    case "pClose": ui.sel = null; refreshPianta(); break;
+    case "pUnplace": {
+      const {p:pp} = findP(ui.sel.pid);
+      if(pp){ pp.pos.splice(ui.sel.i, 1); scheduleSave(); }
+      ui.sel = null; refreshPianta(); break;
+    }
+    case "pOpen": {
+      const {a:aa, p:pp} = findP(ui.sel.pid);
+      if(!pp) break;
+      ui.tab = "ambienti"; ui.openRooms.add(aa.id); ui.openPoint = pp.id; ui.sel = null;
+      render();
+      const el = document.querySelector('[data-p="' + pp.id + '"]');
+      if(el) el.scrollIntoView({block:"start"});
+      break;
+    }
+    case "exportCsv": saveFile("impianto-prese-" + stamp() + ".csv", buildCsv(), "text/csv"); break;
+    case "exportJson": {
+      persist();
+      const out = JSON.parse(JSON.stringify(state));
+      const img = await srcToDataUrl(piantaLocal || piantaSrc());
+      if(img) out.piantaDataUrl = img;
+      saveFile("impianto-prese-backup-" + stamp() + ".json", JSON.stringify(out), "application/json");
+      break;
+    }
+    case "importJson": $("#fileIn").click(); break;
+    case "resetAll":
+      if(await ask("Ambienti, punti, composizioni e prezzi torneranno ai valori iniziali; la planimetria resta. Conviene scaricare prima un backup. Continuare?", "Ricomincia")){
+        const keep = state.savedAt, pianta = state.pianta;
+        state = defaultState(); state.savedAt = keep; state.pianta = pianta;
+        ui.openRooms.clear(); ui.openPoint = null; ui.openModel = null; ui.sel = null; ui.arm = null; ui.preset = null;
+        changed();
+      }
+      break;
+  }
+});
+
+document.addEventListener("keydown", e => {
+  if(e.key === "Enter" && e.target.id === "newRoom"){ e.preventDefault(); document.querySelector('[data-act="addRoom"]').click(); }
+  if(e.key === "Escape" && ui.tab === "pianta" && (ui.arm || ui.sel)){ ui.arm = null; ui.sel = null; refreshPianta(); }
+});
+
+/* Testo e numeri: aggiornano stato e totali senza ridisegnare, così il cursore resta dove sta */
+document.addEventListener("input", e => {
+  const el = e.target, f = el.dataset.f;
+  if(!f || el.type === "checkbox" || el.tagName === "SELECT") return;
+  const {a, c, o} = ctx(el);
+  const i = +el.dataset.i;
+  switch(f){
+    case "roomName": a.nome = el.value; { const l = document.querySelector('[data-oname="' + a.id + '"]'); if(l) l.textContent = el.value; } break;
+    case "oNome": o.nome = el.value; { const l = document.querySelector('[data-oname="' + o.id + '"]'); if(l) l.textContent = el.value; } break;
+    case "oNota": o.nota = el.value; break;
+    case "fNota": if(o.frutti[i]) o.frutti[i].nota = el.value; break;
+    case "cNome": c.nome = el.value; break;
+    case "cSigla": c.sigla = el.value; break;
+    case "cMod": c.moduli = Math.max(0, Math.round(num(el.value))); break;
+    case "cPrezzo": c.prezzo = Math.max(0, num(el.value)); break;
+    case "iva": state.iva = Math.max(0, num(el.value)); break;
+    default: return;
+  }
+  scheduleSave(); updateTotals();
+});
+document.addEventListener("change", e => {
+  const el = e.target, f = el.dataset.f;
+  if(el.id === "pRoom"){ ui.pRoom = el.value; ui.sel = null; refreshPianta(); return; }
+  if(!f) return;
+  const {a, c, o} = ctx(el);
+  const i = +el.dataset.i;
+  if(f === "roomExt"){ a.esterno = el.checked; changed(); }
+  else if(f === "ivaOn"){ state.ivaAttiva = el.checked; changed(); }
+  else if(f === "cCat"){ c.categoria = el.value; changed(); }
+  else if(f === "oFlag"){ o.flag = el.checked; changed(); }
+  else if(f === "fFlag"){ if(o.frutti[i]) o.frutti[i].flag = el.checked; changed(); }
+});
+
+render();
+initCloud();
+})();
+</script>
+</body>
+</html>
